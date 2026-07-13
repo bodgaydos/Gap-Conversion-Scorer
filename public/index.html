@@ -115,6 +115,18 @@
 
   .empty{color:var(--ink3);font-size:13px;text-align:center;padding:28px 0}
 
+  /* lever definitions */
+  .lkey{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:8px}
+  .ldef{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
+  .ldef:first-child{padding-top:0}
+  .ldef:last-of-type{border-bottom:none}
+  .ldef .lname{font-weight:600;font-size:12.5px;color:var(--ink)}
+  .ldef .lname .lk{color:var(--ink3);font-weight:500;font-size:11px;margin-left:4px}
+  .ldef .ltext{color:var(--ink2);font-size:12.5px;line-height:1.55}
+  .ldef .ltext b{color:var(--ink)}
+  .lcal{color:var(--ink3);font-size:11.5px;line-height:1.6;margin:12px 0 0;padding-top:12px;border-top:1px dashed var(--line)}
+  .lcal b{color:var(--ink2)}
+
   /* how it works */
   details.how{margin-top:26px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 16px}
   details.how summary{cursor:pointer;padding:14px 0;font-weight:600;font-size:13px;list-style:none}
@@ -133,6 +145,7 @@
     .col.left{border-right:none;border-bottom:1px solid var(--line2)}
     .row{grid-template-columns:130px 1fr 70px}
     .axis{margin-left:142px}
+    .ldef{grid-template-columns:1fr;gap:3px}
   }
 </style>
 </head>
@@ -163,11 +176,39 @@
     <div class="axis" id="axis" style="display:none"></div>
   </section>
 
+  <div class="seclab">What the levers mean</div>
+  <section class="lkey">
+    <div class="ldef">
+      <div class="lname">Clarity <span class="lk">C</span></div>
+      <div class="ltext">How quickly someone grasps their gap and its link to the product. <b>Raised by:</b> a specific dollar gap, placed near the top, visually tied to Individual Life (a connected/color-matched bar, a "fills the gap" link).</div>
+    </div>
+    <div class="ldef">
+      <div class="lname">Guidance <span class="lk">G</span></div>
+      <div class="ltext">How clearly the design tells you what to do, in order. <b>Raised by:</b> numbered steps, an explicit plan/path, a recommended default amount.</div>
+    </div>
+    <div class="ldef">
+      <div class="lname">Authority <span class="lk">A</span></div>
+      <div class="ltext">Trust and credibility. <b>Raised by:</b> a "Recommended" mark, a rationale (e.g. 10× income), guaranteed-issue / "no health questions," licensing/carrier language.</div>
+    </div>
+    <div class="ldef">
+      <div class="lname">Payoff <span class="lk">Y</span></div>
+      <div class="ltext">The emotional benefit of closing the gap. <b>Raised by:</b> provision language ("your family would receive," "for life"), a big benefit number, a completion/celebration moment.</div>
+    </div>
+    <div class="ldef">
+      <div class="lname">Friction <span class="lk">F</span></div>
+      <div class="ltext">The cost to act (higher = worse; it subtracts). <b>Raised by:</b> form fields, competing CTAs, required consent. <b>Lowered by:</b> reassurance ("apply in minutes · no commitment").</div>
+    </div>
+    <div class="ldef">
+      <div class="lname">Reach <span class="lk">0.2–1.0</span></div>
+      <div class="ltext">The share of sessions that scroll far enough to see the gap card. A top-of-page gap ≈ 1.0; a card buried in an optional list is much lower. Blends the design's persuasion with a "never saw it" baseline.</div>
+    </div>
+    <p class="lcal">For reference, current <b>v6</b> scores about C .18 / G .12 / A .10 / Y .12 / F .04; the top design <b>V6b-3</b> is about C .82 / G .85 / A .80 / Y .45 / F .10.</p>
+  </section>
+
   <details class="how">
     <summary>How the scoring works</summary>
     <div class="inner">
       <p>Each design becomes five lever scores (0–1) plus a reach factor. The model combines a design's levers with each segment's traits through a logistic function, then averages over the weighted population. It's calibrated so current <b>v6 = 12%</b> and <b>v6b = +45%</b> — those two anchors never move, so your uploads slot in relative to them.</p>
-      <p><b>Clarity</b> — is the gap specific (a dollar figure), near the top, and visually tied to the product (a connected bar, a "fills the gap" link)? &nbsp; <b>Guidance</b> — numbered steps, an explicit plan, a recommended default. &nbsp; <b>Authority</b> — "Recommended" mark, a rationale (10× income), guaranteed-issue, licensing language. &nbsp; <b>Payoff</b> — emotional benefit ("your family would receive", "for life"), a big benefit number, a completion moment. &nbsp; <b>Friction</b> — fields, competing CTAs, required consent (higher = worse); reassurance ("apply in minutes, no commitment") lowers it. &nbsp; <b>Reach</b> — share of sessions that scroll far enough to see the gap card; a top-of-page gap is ~1.0, a buried card in an optional list is much lower.</p>
       <p>The rules pre-fill is a rough rubric — the chips under each lever show what it detected. Claude gives a second opinion from the copy and layout. <b>You set the final score</b>; the rules and Claude only suggest. The model math is deterministic; only Claude's opinion varies run to run.</p>
     </div>
   </details>
