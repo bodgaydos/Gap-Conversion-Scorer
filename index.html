@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendella — Gap Insertion Conversion Scorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b2540; --ink2:#53687b; --ink3:#8ea0af;
+    --line:#e6ecf2; --line2:#eef3f8;
+    --bg:#f5f8fb; --card:#ffffff;
+    --blue:#2478c8; --gap:#44b0ef; --gap-soft:#eaf6fe;
+    --navy:#2e4a63; --good:#12915a; --good-soft:#e7f6ee;
+    --warn:#c2711c; --gold:#b7791f;
+    --up:#1f7ae0; --up-soft:#e9f2fc;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 22px 80px}
+  a{color:var(--blue)}
+
+  /* header */
+  header h1{font-family:'Newsreader',serif;font-weight:600;font-size:30px;letter-spacing:-.01em;margin:0 0 6px;line-height:1.15}
+  header .sub{color:var(--ink2);font-size:14px;max-width:680px}
+  .model-flag{display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:6px 11px;background:#fff;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--ink2)}
+  .model-flag .dot{width:7px;height:7px;border-radius:50%;background:var(--gap)}
+
+  /* drop zone */
+  .drop{margin-top:22px;border:1.5px dashed #bcd0e2;border-radius:16px;background:#fff;padding:26px;text-align:center;transition:.15s;cursor:pointer}
+  .drop.hot{border-color:var(--blue);background:var(--up-soft)}
+  .drop .big{font-weight:600;font-size:15px}
+  .drop .small{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  .drop input{display:none}
+
+  /* section labels */
+  .seclab{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3);margin:30px 0 12px}
+
+  /* design card */
+  .dcard{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 2px rgba(11,37,64,.04)}
+  .dhead{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line2)}
+  .dhead .fn{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dhead .conv{margin-left:auto;text-align:right;flex-shrink:0}
+  .dhead .conv .pct{font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1}
+  .dhead .conv .rel{font-size:11.5px;font-weight:600;margin-top:2px}
+  .pos{color:var(--good)} .neg{color:#c0392b}
+  .dhead .x{border:none;background:#f2f5f8;color:var(--ink2);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:15px;flex-shrink:0}
+  .dhead .x:hover{background:#e6ebf0}
+
+  .dbody{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .col{padding:16px 18px}
+  .col.left{border-right:1px solid var(--line2)}
+  .col h4{margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.3px;color:var(--ink)}
+  .col .hint{color:var(--ink3);font-size:11.5px;margin:0 0 12px}
+
+  /* lever rows */
+  .lev{margin-bottom:13px}
+  .lev-top{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+  .lev-name{font-weight:600;font-size:12.5px}
+  .lev-full{color:var(--ink3);font-size:11px;font-weight:500}
+  .lev-val{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px;color:var(--blue)}
+  .lev-val.fr{color:var(--warn)}
+  input[type=range]{width:100%;height:5px;-webkit-appearance:none;appearance:none;background:linear-gradient(90deg,var(--blue) 0%,var(--blue) var(--p,50%),#e3e9ef var(--p,50%));border-radius:4px;outline:none;margin:0}
+  input[type=range].fr{background:linear-gradient(90deg,var(--warn) 0%,var(--warn) var(--p,50%),#e3e9ef var(--p,50%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--blue);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  input[type=range].fr::-webkit-slider-thumb{border-color:var(--warn)}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--blue);cursor:pointer}
+  .sig{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+  .chip{font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--line2);color:var(--ink2);white-space:nowrap}
+  .chip.on{background:var(--up-soft);color:var(--blue);font-weight:600}
+  .chip.miss{opacity:.5;text-decoration:line-through}
+
+  /* reach row highlight */
+  .lev.reach{padding-top:11px;border-top:1px dashed var(--line);margin-top:14px}
+  .lev.reach .lev-val{color:var(--good)}
+  .lev.reach input[type=range]{background:linear-gradient(90deg,var(--good) 0%,var(--good) var(--p,50%),#e3e9ef var(--p,50%))}
+  .lev.reach input[type=range]::-webkit-slider-thumb{border-color:var(--good)}
+
+  /* claude panel */
+  .cl-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-weight:600;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer}
+  .cl-btn:hover{border-color:#c8d5e0;background:#fafcfe}
+  .cl-btn .spark{width:9px;height:9px;border-radius:50%;background:conic-gradient(from 200deg,#ff8a3d,#ff5a36,#ff8a3d)}
+  .cl-btn:disabled{opacity:.55;cursor:default}
+  .cl-out{margin-top:12px;font-size:12.5px}
+  .cl-scores{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .cl-sc{font-variant-numeric:tabular-nums;font-size:11.5px;padding:3px 8px;border-radius:7px;background:var(--line2);color:var(--ink)}
+  .cl-sc b{color:var(--blue)}
+  .cl-rat{color:var(--ink2);font-size:12px;line-height:1.5;margin-top:4px}
+  .cl-rat div{margin-bottom:3px}
+  .cl-rat b{color:var(--ink)}
+  .apply{margin-top:9px;border:none;background:var(--ink);color:#fff;font-family:inherit;font-weight:600;font-size:12.5px;padding:8px 13px;border-radius:8px;cursor:pointer}
+  .apply:hover{background:#12314f}
+  .cl-err{color:var(--warn);font-size:12px;line-height:1.5;background:#fdf6ec;border:1px solid #f2e2c6;border-radius:8px;padding:9px 11px;margin-top:10px}
+  .cl-load{color:var(--ink3);font-size:12px;margin-top:10px;display:flex;align-items:center;gap:8px}
+  .spin{width:13px;height:13px;border:2px solid #dce4ec;border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* results */
+  .results{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:8px}
+  .results h3{margin:0 0 3px;font-size:16px;font-weight:600}
+  .results .rsub{color:var(--ink2);font-size:12.5px;margin-bottom:16px}
+  .row{display:grid;grid-template-columns:190px 1fr 96px;align-items:center;gap:12px;margin-bottom:8px}
+  .row .nm{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .nm .tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--up);background:var(--up-soft);padding:1px 5px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .row .nm .bl{display:block;font-weight:500;color:var(--ink3);font-size:11px}
+  .track{position:relative;height:26px;background:#f1f5f9;border-radius:7px;overflow:hidden}
+  .fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;border-radius:7px;min-width:34px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+  .fill.base{background:var(--navy)} .fill.up{background:var(--blue)} .fill.v6{background:#5b7488}
+  .row .lift{font-size:12px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .win{font-size:9px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--gold);padding:1px 5px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .axis{display:flex;justify-content:space-between;margin:4px 0 0 202px;color:var(--ink3);font-size:10px}
+
+  .empty{color:var(--ink3);font-size:13px;text-align:center;padding:28px 0}
+
+  /* how it works */
+  details.how{margin-top:26px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 16px}
+  details.how summary{cursor:pointer;padding:14px 0;font-weight:600;font-size:13px;list-style:none}
+  details.how summary::-webkit-details-marker{display:none}
+  details.how summary::before{content:'+ ';color:var(--blue);font-weight:800}
+  details.how[open] summary::before{content:'– '}
+  details.how .inner{padding:0 0 16px;color:var(--ink2);font-size:12.5px;line-height:1.6}
+  details.how b{color:var(--ink)}
+  .foot{color:var(--ink3);font-size:11px;line-height:1.6;margin-top:22px}
+
+  #stage{position:fixed;left:-30000px;top:0;width:1120px;height:2600px;overflow:hidden;pointer-events:none;visibility:hidden}
+  #stage iframe{width:1120px;height:2600px;border:0}
+
+  @media (max-width:760px){
+    .dbody{grid-template-columns:1fr}
+    .col.left{border-right:none;border-bottom:1px solid var(--line2)}
+    .row{grid-template-columns:130px 1fr 70px}
+    .axis{margin-left:142px}
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="wrap">
+
+  <header>
+    <h1>Gap Insertion — Conversion Scorer</h1>
+    <div class="sub">Drop in one or more HTML mockups. Each is rendered, auto-scored on the five UX levers, and dropped live into the calibrated 64-segment model — ranked against the baseline design set.</div>
+    <span class="model-flag"><span class="dot"></span> Modeled estimate — a ranking with reasons, not measured data. Confirm with a live A/B test.</span>
+  </header>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".html,.htm" multiple>
+    <div class="big">Drop HTML mockups here — or click to choose</div>
+    <div class="small">Rendered locally in your browser. Multiple files welcome.</div>
+  </label>
+
+  <div class="seclab" id="designs-lab" style="display:none">Your designs</div>
+  <div id="designs"></div>
+
+  <div class="seclab">Conversion vs the baseline set</div>
+  <section class="results">
+    <h3>Modeled P(click primary CTA)</h3>
+    <div class="rsub">Population-weighted across 64 segments. Lift is measured vs current <b>v6</b>. Your uploads are marked <span style="color:var(--up);font-weight:700">NEW</span>.</div>
+    <div id="bars"><div class="empty">Upload a design to see it ranked here.</div></div>
+    <div class="axis" id="axis" style="display:none"></div>
+  </section>
+
+  <details class="how">
+    <summary>How the scoring works</summary>
+    <div class="inner">
+      <p>Each design becomes five lever scores (0–1) plus a reach factor. The model combines a design's levers with each segment's traits through a logistic function, then averages over the weighted population. It's calibrated so current <b>v6 = 12%</b> and <b>v6b = +45%</b> — those two anchors never move, so your uploads slot in relative to them.</p>
+      <p><b>Clarity</b> — is the gap specific (a dollar figure), near the top, and visually tied to the product (a connected bar, a "fills the gap" link)? &nbsp; <b>Guidance</b> — numbered steps, an explicit plan, a recommended default. &nbsp; <b>Authority</b> — "Recommended" mark, a rationale (10× income), guaranteed-issue, licensing language. &nbsp; <b>Payoff</b> — emotional benefit ("your family would receive", "for life"), a big benefit number, a completion moment. &nbsp; <b>Friction</b> — fields, competing CTAs, required consent (higher = worse); reassurance ("apply in minutes, no commitment") lowers it. &nbsp; <b>Reach</b> — share of sessions that scroll far enough to see the gap card; a top-of-page gap is ~1.0, a buried card in an optional list is much lower.</p>
+      <p>The rules pre-fill is a rough rubric — the chips under each lever show what it detected. Claude gives a second opinion from the copy and layout. <b>You set the final score</b>; the rules and Claude only suggest. The model math is deterministic; only Claude's opinion varies run to run.</p>
+    </div>
+  </details>
+
+  <p class="foot">Internal analysis tool. Lever scores are expert-style judgments, not measurements; the reach and rules heuristics are approximate by design and meant to be adjusted. Baseline design vectors are carried from the persona-grid model of record.</p>
+
+</div>
+
+<script>
+const SCORE_ENDPOINT = "/api/score";   // same-origin backend proxy (see server.js)
+/* ============================ MODEL ENGINE (port of persona_grid.py) ============================ */
+const BASE_VARIANTS = {
+  v2:{name:"v2 · Original",levers:{C:0.09,G:0.07,A:0.13,Y:0.09,F:0.30}},
+  v3:{name:"v3 · Gap-at-top",levers:{C:0.15,G:0.10,A:0.11,Y:0.11,F:0.09}},
+  v6:{name:"v6 · Current",levers:{C:0.18,G:0.12,A:0.10,Y:0.12,F:0.04}},
+  healthee:{name:"Healthee · Live embed",levers:{C:0.62,G:0.45,A:0.45,Y:0.62,F:0.12}},
+  v6a:{name:"v6a · Connected bar",levers:{C:0.88,G:0.35,A:0.28,Y:0.55,F:0.05}},
+  v6b:{name:"v6b · 2-step path",levers:{C:0.55,G:0.82,A:0.78,Y:0.35,F:0.09}},
+  v6b3:{name:"V6b-3 · Steps + gap bar",levers:{C:0.82,G:0.85,A:0.80,Y:0.45,F:0.10}},
+  v6c:{name:"v6c · Add-to-close",levers:{C:0.72,G:0.48,A:0.32,Y:0.90,F:0.22}},
+};
+const BASE_ORDER=["v2","v3","v6","healthee","v6a","v6b","v6b3","v6c"];
+const BASE_REACH={healthee:0.35};
+const clamp=x=>Math.min(1,Math.max(0,x));
+const FAM_W=[.25,.25,.25,.25], AGE_W=[.25,.35,.30,.10], INC_W=[.25,.35,.25,.15];
+const INC_REP=[38000,75000,150000,275000];
+const NEED_BASE=[.28,.55,.82,.90], NEED_AGEMULT=[.95,1.05,1.00,.72];
+function build(f,a,i){
+  const dep=f>=2?1:0;
+  return {Nn:clamp(NEED_BASE[f]*NEED_AGEMULT[a]),L:clamp(0.30+0.11*a+0.05*i),
+    T:clamp(0.42+0.05*a+0.05*dep),E:clamp(0.54-0.03*a+0.06*dep),
+    Dp:clamp(0.60-0.05*a-0.05*i+0.04*dep),Ps:clamp(0.80-0.16*i+0.04*dep),
+    incn:clamp((INC_REP[i]-50000)/230000),ii:i,w:FAM_W[f]*AGE_W[a]*INC_W[i]};
+}
+const CELLS=[];for(let f=0;f<4;f++)for(let a=0;a<4;a++)for(let i=0;i<4;i++)CELLS.push(build(f,a,i));
+function variantLatent(L,u){
+  return 1.75*L.C*(0.55+0.75*(1-u.L))
+       + 1.55*L.G*(0.35+0.95*u.Dp)
+       + 1.50*L.A*(0.30+0.95*u.T)
+       + 1.65*L.Y*(0.30+0.85*u.Nn)*(0.45+0.75*u.E)
+       - 1.35*L.F*(1-u.E);
+}
+const userLatent=u=>-1.15*u.Ps*(1-0.6*u.incn)+0.25*u.incn;
+const reachFrac=(u,R)=>Math.min(1,R*(0.40+1.20*u.E));
+function prob(b0,scale,u,L,R){
+  const pc=1/(1+Math.exp(-(b0+userLatent(u)+scale*variantLatent(L,u))));
+  if(R>=0.999)return pc;
+  const p0=1/(1+Math.exp(-(b0+userLatent(u))));
+  const r=reachFrac(u,R);return r*pc+(1-r)*p0;
+}
+const wrate=(b0,scale,L,R)=>CELLS.reduce((s,c)=>s+c.w*prob(b0,scale,c,L,R),0);
+function calibrate(){
+  const v6=BASE_VARIANTS.v6.levers,v6b=BASE_VARIANTS.v6b.levers,TB=0.12,TL=0.45;
+  const cB0=scale=>{let lo=-9,hi=9;for(let k=0;k<70;k++){const m=(lo+hi)/2;(wrate(m,scale,v6,1)<TB)?lo=m:hi=m;}return(lo+hi)/2;};
+  let lo=0.01,hi=1.5;
+  for(let k=0;k<55;k++){const m=(lo+hi)/2,b0=cB0(m);(wrate(b0,m,v6b,1)/wrate(b0,m,v6,1)-1<TL)?lo=m:hi=m;}
+  const SCALE=(lo+hi)/2;return {B0:cB0(SCALE),SCALE};
+}
+const {B0,SCALE}=calibrate();
+const overall=(L,R)=>wrate(B0,SCALE,L,R);
+const BASE_RATE=overall(BASE_VARIANTS.v6.levers,1);
+
+/* by-income marginal (for a quick segment read) */
+function byIncome(L,R){
+  const out=[0,0,0,0],w=[0,0,0,0];
+  CELLS.forEach(c=>{out[c.ii]+=c.w*prob(B0,SCALE,c,L,R);w[c.ii]+=c.w;});
+  return out.map((x,i)=>x/w[i]);
+}
+
+/* ============================ RULES SCORER ============================ */
+const RX={
+  dollarGap:/\$[\s]?[\d][\d,\.]*\s?(k|m|,000)?\b[^.]{0,24}(short|gap)/i,
+  gapWord:/(gap to close|coverage gap|leave your family|\bshort\b|fill the gap|\$[\d][\d,\.]*\s?(k|m)?\s*gap)/i,
+  connect:/(fills? the[^.]{0,30}gap|close (it|your gap|my gap)|↑ ?fills|blue gap above|fill with individual)/i,
+  steps:/(step\s?1|step\s?2|\b2[- ]?step|two[- ]?step|1\s*→\s*2)/i,
+  planPath:/(\d[- ]?step plan|your 2-step plan|plan to reach|then fill|first[^.]{0,40}then)/i,
+  recommend:/(recommend|★|✦|best pick|our pick)/i,
+  rationale:/(why \$|10\s?[×x]\s|10\s?times|guideline|years of (lost )?(earnings|income))/i,
+  gi:/(guaranteed[- ]?issue|no health questions|no medical exam|no exam)/i,
+  producer:/(licensed (insurance )?producer|not an offer of insurance|illustrative|final rate|eligibility)/i,
+  brand:/pendella/i,
+  payoff:/(your family (would|will) receive|protect your family|stays with you|for life|loved ones|peace of mind|replace[^.]{0,20}income|standard of living)/i,
+  celebrate:/(on its way|you'?re all set|quote is on its way|all done|you'?re covered)/i,
+  fully:/(fully covered|now covered|gap closed|\$0 (gap|short))/i,
+  lowFric:/(apply in minutes|no commitment|real[- ]?time|instant|no obligation|takes? (a )?(few )?minutes|2 minutes)/i,
+  optional:/\boptional\b/i,
+  ctaWords:/(see my rate|get my rate|see my options|close my gap|protect my family|continue to|apply now|start my|see how to close)/i,
+};
+function findGapTop(doc){
+  let best=null;
+  const els=doc.body.querySelectorAll('h1,h2,h3,div,span,p,section');
+  for(const el of els){
+    const t=(el.textContent||'').trim();
+    if(t.length>0 && t.length<160 && (RX.dollarGap.test(t)||/leave your family|coverage gap|gap to close/i.test(t))){
+      const top=el.getBoundingClientRect().top + (doc.defaultView?doc.defaultView.scrollY:0);
+      const ot=el.offsetTop||top||0;
+      if(best===null||ot<best) best=ot;
+    }
+  }
+  return best; // px, or null
+}
+function ruleScore(doc,rawHtml){
+  let text='';
+  try{ text=(doc.body.innerText||doc.body.textContent||''); }catch(e){ text=rawHtml.replace(/<[^>]+>/g,' '); }
+  const T=text.replace(/\s+/g,' ');
+  const has=rx=>rx.test(T);
+  const pageH=Math.max(doc.body.scrollHeight||0, 400);
+  const gapTop=findGapTop(doc);
+  const foldRatio=gapTop===null?1:clamp(gapTop/pageH);
+  const gapAtTop=gapTop!==null && gapTop<520;
+  // structural counts
+  const fields=doc.querySelectorAll('input:not([type=range]):not([type=hidden]),select,textarea').length;
+  const ranges=doc.querySelectorAll('input[type=range]').length;
+  const buttons=[...doc.querySelectorAll('button,a.btn,.btn,.cta,[role=button]')];
+  const ctaCount=buttons.filter(b=>RX.ctaWords.test(b.textContent||'')).length;
+  const competing=(T.match(/recommended/gi)||[]).length;
+  // structural discriminators (these actually differ across same-screen variants)
+  const segCount=doc.querySelectorAll('[class*="seg"]').length + (rawHtml.match(/class="[^"]*\bseg[^"]*"/g)||[]).length;
+  const barSeg=Math.min(1,Math.max(0,(segCount-1))/2);            // 0 (no bar) → 1 (3+ segments)
+  const connectTag=doc.querySelectorAll('[class*="fills"],[class*="fill-tag"],[id*="fills"]').length>0 || has(RX.connect);
+  // count only the numbered badges on the plan/insertion columns — NOT the shared enrollment progress bar (.steps .step)
+  const stepBadges=doc.querySelectorAll('.step-num,[class*="step-num"],.pp-n,[class*="pp-n"]').length;
+  const stepStrength=stepBadges>=2?1:stepBadges===1?0.5:(has(RX.planPath)?0.4:0);
+  const trustChips=doc.querySelectorAll('[class*="gi-badge"],[class*="trust"],[class*="chip"]').length>0;
+  const consent=doc.querySelectorAll('input[type=checkbox],.consent,.cbox').length>0 || /i agree|consent/i.test(T);
+  const namedIL=/individual life/i.test(T);
+  const bigBenefit=/\$[\d]{3,}(,\d{3})+|\$\s?[\d](\.[\d])?\s?m\b/i.test(T);
+  const placement=gapAtTop?0.20:(foldRatio<0.4?0.10:foldRatio<0.7?0.04:0);
+
+  const b=x=>x?1:0;
+  const S={};
+  // Conservative + graded: a bare design lands low; only the full structural stack approaches the top.
+  S.C=clamp(0.06 + 0.20*b(has(RX.dollarGap)) + 0.26*barSeg + 0.20*b(connectTag)
+            + placement + 0.06*b(namedIL));
+  S.G=clamp(0.05 + 0.34*stepStrength + 0.22*b(has(RX.planPath))
+            + 0.10*b(ranges>0) + 0.14*b(has(RX.recommend)&&(stepBadges>0||has(RX.steps))));
+  S.A=clamp(0.06 + 0.22*b(has(RX.recommend)) + 0.18*b(has(RX.rationale))
+            + 0.20*b(has(RX.gi)) + 0.12*b(has(RX.producer)) + 0.08*b(has(RX.brand)) + 0.08*b(trustChips));
+  S.Y=clamp(0.05 + 0.26*b(has(RX.payoff)) + 0.16*b(bigBenefit)
+            + 0.24*b(has(RX.celebrate)) + 0.24*b(has(RX.fully)));
+  S.F=clamp(Math.max(0.02, 0.03 + 0.028*Math.min(fields,8) + 0.05*Math.max(0,ctaCount-1)
+            + 0.08*b(consent) - 0.10*b(has(RX.lowFric))));
+  // reach: top gap ~1.0; buried + optional + competing list -> low
+  let reach=1;
+  if(!gapAtTop){
+    reach=1 - 0.85*Math.max(0,foldRatio-0.15)/0.85 - 0.14*b(has(RX.optional)) - 0.02*Math.max(0,competing-1);
+  }
+  reach=clamp(Math.max(reach,0.2));
+  if(gapAtTop && !has(RX.optional)) reach=1;
+
+  return {levers:{C:+S.C.toFixed(2),G:+S.G.toFixed(2),A:+S.A.toFixed(2),Y:+S.Y.toFixed(2),F:+S.F.toFixed(2)},
+    reach:+reach.toFixed(2),
+    signals:{
+      C:[['$ gap stated',has(RX.dollarGap)],['gap at top',gapAtTop],[(segCount>1?'connected bar ('+segCount+' seg)':'connected bar'),barSeg>0],['"fills the gap" link',connectTag],['names Individual Life',namedIL]],
+      G:[[(stepBadges>0?stepBadges+' step badges':'numbered steps'),stepStrength>0],['explicit plan/path',has(RX.planPath)],['slider default',ranges>0],['recommended step',has(RX.recommend)&&(stepBadges>0||has(RX.steps))]],
+      A:[['Recommended mark',has(RX.recommend)],['rationale (10× etc.)',has(RX.rationale)],['guaranteed-issue',has(RX.gi)],['licensing lang.',has(RX.producer)],['trust chips',trustChips]],
+      Y:[['emotional payoff',has(RX.payoff)],['big benefit number',bigBenefit],['celebration moment',has(RX.celebrate)],['"fully covered"',has(RX.fully)]],
+      F:[[fields+' fields',fields>0],[ctaCount+' primary CTAs',ctaCount>0],['consent step',consent],['"apply in minutes"',has(RX.lowFric)]],
+      reach:[[gapAtTop?'gap above fold':'gap at '+(foldRatio*100).toFixed(0)+'% depth',gapAtTop],['optional section',has(RX.optional)],[competing+' "recommended" items',competing>1]]
+    }};
+}
+
+/* ============================ STATE + RENDER ============================ */
+const LEVER_META=[['C','Clarity'],['G','Guidance'],['A','Authority'],['Y','Payoff'],['F','Friction']];
+let designs=[]; let uid=0;
+const $=s=>document.querySelector(s);
+const pct=x=>(x*100).toFixed(1)+'%';
+
+function addFiles(files){
+  [...files].forEach(f=>{
+    if(!/\.html?$/i.test(f.name))return;
+    const rd=new FileReader();
+    rd.onload=()=>{ const id=++uid; const d={id,name:f.name,html:rd.result,rules:null,claude:null,final:null,claudeState:'idle',claudeMsg:''};
+      designs.push(d); renderCards(); scoreDesign(d); };
+    rd.readAsText(f);
+  });
+}
+function scoreDesign(d){
+  const stage=$('#stage'); const ifr=document.createElement('iframe');
+  ifr.setAttribute('sandbox','allow-same-origin allow-scripts');
+  stage.appendChild(ifr);
+  const done=()=>{
+    let res;
+    try{ res=ruleScore(ifr.contentDocument,d.html); }
+    catch(e){ res={levers:{C:.3,G:.3,A:.3,Y:.3,F:.1},reach:1,signals:{},err:'Could not read rendered DOM ('+e.message+') — set levers by hand.'}; }
+    d.rules=res; d.final={levers:{...res.levers},reach:res.reach};
+    setTimeout(()=>{ try{stage.removeChild(ifr);}catch(e){} },50);
+    renderCards(); renderBars();
+  };
+  ifr.onload=()=>setTimeout(done,320);
+  try{ ifr.srcdoc=d.html; }catch(e){ ifr.setAttribute('srcdoc',d.html); }
+  setTimeout(()=>{ if(!d.rules) done(); },2500); // fallback if onload never fires
+}
+function convOf(d){ return d.final?overall(d.final.levers,d.final.reach):BASE_RATE; }
+
+function renderCards(){
+  $('#designs-lab').style.display=designs.length?'block':'none';
+  const host=$('#designs'); host.innerHTML='';
+  designs.forEach(d=>{
+    const r=convOf(d), rel=r/BASE_RATE-1;
+    const el=document.createElement('div'); el.className='dcard';
+    const sig=(lev)=>!d.rules||!d.rules.signals[lev]?'':'<div class="sig">'+d.rules.signals[lev].map(s=>`<span class="chip ${s[1]?'on':'miss'}">${s[0]}</span>`).join('')+'</div>';
+    const leverRows=LEVER_META.map(([k,full])=>{
+      const v=d.final?d.final.levers[k]:0; const isF=k==='F';
+      return `<div class="lev">
+        <div class="lev-top"><span class="lev-name">${full}</span><span class="lev-full">${k}</span><span class="lev-val ${isF?'fr':''}" id="lv-${d.id}-${k}">${v.toFixed(2)}</span></div>
+        <input type="range" class="${isF?'fr':''}" min="0" max="1" step="0.01" value="${v}" style="--p:${v*100}%" oninput="setLever(${d.id},'${k}',this.value,this)">
+        ${sig(k)}
+      </div>`;
+    }).join('');
+    const rv=d.final?d.final.reach:1;
+    const reachRow=`<div class="lev reach">
+        <div class="lev-top"><span class="lev-name">Reach</span><span class="lev-full">who sees the gap</span><span class="lev-val" id="lv-${d.id}-R">${rv.toFixed(2)}</span></div>
+        <input type="range" min="0.2" max="1" step="0.01" value="${rv}" style="--p:${((rv-0.2)/0.8)*100}%" oninput="setReach(${d.id},this.value,this)">
+        ${!d.rules||!d.rules.signals.reach?'':'<div class="sig">'+d.rules.signals.reach.map(s=>`<span class="chip ${s[1]?'on':'miss'}">${s[0]}</span>`).join('')+'</div>'}
+      </div>`;
+
+    let claudeHtml='';
+    if(d.claudeState==='loading') claudeHtml=`<div class="cl-load"><span class="spin"></span> Claude is reading the design…</div>`;
+    else if(d.claudeState==='error') claudeHtml=`<div class="cl-err">${d.claudeMsg}</div>`;
+    else if(d.claudeState==='done'&&d.claude){
+      const c=d.claude;
+      claudeHtml=`<div class="cl-out">
+        <div class="cl-scores">${LEVER_META.map(([k])=>`<span class="cl-sc">${k} <b>${c.levers[k].toFixed(2)}</b></span>`).join('')}<span class="cl-sc">reach <b>${c.reach.toFixed(2)}</b></span></div>
+        <div class="cl-rat">${LEVER_META.map(([k,full])=>c.rationale&&c.rationale[k]?`<div><b>${full}:</b> ${escapeHtml(c.rationale[k])}</div>`:'').join('')}</div>
+        <button class="apply" onclick="applyClaude(${d.id})">Apply Claude's scores</button>
+      </div>`;
+    }
+    const errNote=d.rules&&d.rules.err?`<div class="cl-err">${d.rules.err}</div>`:'';
+
+    el.innerHTML=`
+      <div class="dhead">
+        <span class="fn">${escapeHtml(d.name)}</span>
+        <span class="conv"><span class="pct" id="cv-${d.id}">${pct(r)}</span><span class="rel ${rel>=0?'pos':'neg'}" id="cr-${d.id}">${rel>=0?'+':''}${(rel*100).toFixed(0)}% vs v6</span></span>
+        <button class="x" title="Remove" onclick="removeDesign(${d.id})">×</button>
+      </div>
+      <div class="dbody">
+        <div class="col left"><h4>Lever scores</h4><p class="hint">Rules pre-filled these — chips show what was detected. Drag to set your final.</p>${errNote}${leverRows}${reachRow}</div>
+        <div class="col right"><h4>Claude second opinion</h4><p class="hint">An independent read of the copy &amp; layout. Suggestion only — you decide.</p>
+          <button class="cl-btn" ${d.claudeState==='loading'?'disabled':''} onclick="askClaude(${d.id})"><span class="spark"></span> ${d.claude?'Re-ask Claude':'Ask Claude to score'}</button>
+          ${claudeHtml}
+        </div>
+      </div>`;
+    host.appendChild(el);
+  });
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function setLever(id,k,val,elm){
+  const d=designs.find(x=>x.id===id); if(!d)return;
+  d.final.levers[k]=+val; elm.style.setProperty('--p',(val*100)+'%');
+  $('#lv-'+id+'-'+k).textContent=(+val).toFixed(2);
+  updateConv(d); renderBars();
+}
+function setReach(id,val,elm){
+  const d=designs.find(x=>x.id===id); if(!d)return;
+  d.final.reach=+val; elm.style.setProperty('--p',(((val-0.2)/0.8)*100)+'%');
+  $('#lv-'+id+'-R').textContent=(+val).toFixed(2);
+  updateConv(d); renderBars();
+}
+function updateConv(d){
+  const r=convOf(d), rel=r/BASE_RATE-1;
+  $('#cv-'+d.id).textContent=pct(r);
+  const cr=$('#cr-'+d.id); cr.textContent=(rel>=0?'+':'')+(rel*100).toFixed(0)+'% vs v6'; cr.className='rel '+(rel>=0?'pos':'neg');
+}
+function removeDesign(id){ designs=designs.filter(x=>x.id!==id); renderCards(); renderBars(); }
+function applyClaude(id){
+  const d=designs.find(x=>x.id===id); if(!d||!d.claude)return;
+  d.final={levers:{...d.claude.levers},reach:d.claude.reach};
+  renderCards(); renderBars();
+}
+
+/* ============================ RESULTS BARS ============================ */
+function renderBars(){
+  const bars=$('#bars'); const axis=$('#axis');
+  const rows=[];
+  BASE_ORDER.forEach(v=>rows.push({key:v,name:BASE_VARIANTS[v].name,rate:overall(BASE_VARIANTS[v].levers,BASE_REACH[v]??1),base:v==='v6',up:false}));
+  designs.forEach(d=>{ if(d.final) rows.push({key:'u'+d.id,name:d.name,rate:convOf(d),base:false,up:true}); });
+  if(!designs.length){ bars.innerHTML='<div class="empty">Upload a design to see it ranked here.</div>'; axis.style.display='none'; return; }
+  const maxR=Math.max(...rows.map(r=>r.rate),0.3);
+  const SMAX=Math.max(0.30,maxR*1.08);
+  const winKey=rows.slice().sort((a,b)=>b.rate-a.rate)[0].key;
+  rows.sort((a,b)=>a.rate-b.rate);
+  bars.innerHTML=rows.map(r=>{
+    const w=(r.rate/SMAX*100).toFixed(1);
+    const rel=r.rate/BASE_RATE-1;
+    const cls=r.base?'v6':(r.up?'up':'base');
+    const nm=r.name.split(' · ');
+    const tag=r.up?'<span class="tag">NEW</span>':'';
+    const win=r.key===winKey?'<span class="win">TOP</span>':'';
+    const liftHtml=r.base?'<span style="color:var(--ink3)">baseline</span>':`<span class="${rel>=0?'pos':'neg'}">${rel>=0?'+':''}${(rel*100).toFixed(0)}%</span>`;
+    return `<div class="row">
+      <div class="nm">${escapeHtml(nm[0])}${tag}${win}<span class="bl">${escapeHtml(nm[1]||'')}</span></div>
+      <div class="track"><div class="fill ${cls}" style="width:${w}%">${pct(r.rate)}</div></div>
+      <div class="lift">${liftHtml}</div>
+    </div>`;
+  }).join('');
+  axis.style.display='flex'; let a='';for(let i=0;i<=SMAX*100+0.01;i+=5)a+='<span>'+i+'%</span>'; axis.innerHTML=a;
+}
+
+/* ============================ CLAUDE SECOND OPINION ============================ */
+async function askClaude(id){
+  const d=designs.find(x=>x.id===id); if(!d)return;
+  d.claudeState='loading'; renderCards();
+  // gather the rendered visible text to send to the scoring service
+  let text='';
+  try{
+    const ifr=document.createElement('iframe'); ifr.setAttribute('sandbox','allow-same-origin');
+    ifr.style.cssText='position:fixed;left:-30000px;width:1120px;height:2200px'; document.body.appendChild(ifr);
+    await new Promise(res=>{ifr.onload=()=>setTimeout(res,150);ifr.srcdoc=d.html;setTimeout(res,1500);});
+    try{text=ifr.contentDocument.body.innerText;}catch(e){text=d.html.replace(/<[^>]+>/g,' ');}
+    document.body.removeChild(ifr);
+  }catch(e){ text=d.html.replace(/<[^>]+>/g,' '); }
+  text=text.replace(/\s+/g,' ').trim().slice(0,7000);
+  try{
+    const resp=await fetch(SCORE_ENDPOINT,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text, signals:d.rules?d.rules.signals:{}})
+    });
+    const data=await resp.json().catch(()=>({error:'Bad response from scoring service (HTTP '+resp.status+')'}));
+    if(!resp.ok||data.error) throw new Error(data.error||('HTTP '+resp.status));
+    d.claude={
+      levers:{C:clamp(+data.C),G:clamp(+data.G),A:clamp(+data.A),Y:clamp(+data.Y),F:clamp(+data.F)},
+      reach:clamp(Math.max(+data.reach||1,0.2)),
+      rationale:data.rationale||{}
+    };
+    d.claudeState='done';
+  }catch(e){
+    d.claudeState='error';
+    d.claudeMsg="Couldn't reach the Claude scoring service. On the deployed tool this means the backend is down or ANTHROPIC_API_KEY isn't set. If you opened the raw HTML file with no server, there's no backend to call — deploy it (see README) or score in chat. ("+e.message+")";
+  }
+  renderCards();
+}
+
+/* ============================ WIRING ============================ */
+const drop=$('#drop'), file=$('#file');
+file.addEventListener('change',e=>{addFiles(e.target.files);file.value='';});
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
+drop.addEventListener('drop',e=>{ if(e.dataTransfer&&e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+renderBars();
+</script>
+</body>
+</html>
