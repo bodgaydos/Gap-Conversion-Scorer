@@ -25,6 +25,9 @@
 
   /* header */
   header h1{font-family:'Newsreader',serif;font-weight:600;font-size:30px;letter-spacing:-.01em;margin:0 0 6px;line-height:1.15}
+  .head-row{display:flex;align-items:center;gap:16px}
+  .startover{margin-left:auto;flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--ink2);font-family:inherit;font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .startover:hover{border-color:var(--blue);color:var(--blue)}
   header .sub{color:var(--ink2);font-size:14px;max-width:680px}
   .model-flag{display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:6px 11px;background:#fff;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--ink2)}
   .model-flag .dot{width:7px;height:7px;border-radius:50%;background:var(--gap)}
@@ -228,7 +231,10 @@
 <div class="wrap">
 
   <header>
-    <h1>Gap Insertion — Conversion Scorer</h1>
+    <div class="head-row">
+      <h1>Gap Insertion — Conversion Scorer</h1>
+      <button class="startover" onclick="startOver()" title="Clear all uploaded designs"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Start over</button>
+    </div>
     <div class="sub">Drop in one or more HTML mockups. Each is rendered, auto-scored on the five UX levers, and dropped live into the calibrated 64-segment model — ranked against the baseline design set.</div>
     <span class="model-flag"><span class="dot"></span> Modeled estimate — a ranking with reasons, not measured data. Confirm with a live A/B test.</span>
   </header>
@@ -282,6 +288,21 @@
     <div class="inner">
       <p>Each design becomes five lever scores (0–1) plus a reach factor. The model combines a design's levers with each segment's traits through a logistic function, then averages over the weighted population. It's calibrated so current <b>v6 = 12%</b> and <b>v6b = +45%</b> — those two anchors never move, so your uploads slot in relative to them.</p>
       <p>The rules pre-fill is a rough rubric — the chips under each lever show what it detected. Claude gives a second opinion from the copy and layout. <b>You set the final score</b>; the rules and Claude only suggest. The model math is deterministic; only Claude's opinion varies run to run.</p>
+    </div>
+  </details>
+
+  <details class="how">
+    <summary>The behavioral science behind the levers</summary>
+    <div class="inner">
+      <p>Each lever maps to an established finding in behavioral science — <i>what</i> the levers are is theory-backed, even though <i>how much</i> each is worth is expert judgment until a live test calibrates it.</p>
+      <p><b>Authority.</b> Under uncertainty, people lean on credible cues and social proof (Cialdini's principles of influence). A "Recommended" mark, a 10× rationale, and guaranteed-issue language raise it.</p>
+      <p><b>Friction.</b> Small hurdles suppress action far more than their size suggests — "sludge," and the Fogg Behavior Model, where action needs motivation, ability, and a prompt at once. Fewer fields and reassurance ("no commitment") lower it.</p>
+      <p><b>Payoff.</b> Choices are driven by anticipated feeling, not just expected value (prospect theory; the affect heuristic — Kahneman &amp; Tversky). Provision framing — "your family would receive," "for life" — activates that far more than income-multiple math.</p>
+      <p><b>Guidance.</b> Defaults and a clear recommended path shape decisions powerfully (choice architecture / "Nudge" — Thaler &amp; Sunstein). Numbered steps and a pre-set amount cut the effort of deciding.</p>
+      <p><b>Clarity.</b> The easier information is to process, the more likely people act on it (cognitive load; processing fluency). A specific dollar gap, near the top, tied visually to the product beats a buried, abstract one.</p>
+      <p><b>Reach.</b> None of the above matters if the card is never seen — a buried, optional placement is discounted by how few people scroll to it.</p>
+      <p><b>The model.</b> These scores feed a discrete-choice (logistic) model — the random-utility framework used across economics and marketing, for which McFadden won the 2000 Nobel — with interaction terms so a lever's effect depends on who's seeing it, then averaged over a weighted 64-segment population and pinned to two anchors (current v6 = 12%, best redesign = +45%).</p>
+      <p><b>Honest footing.</b> The lever definitions are theory-grounded and the math is standard, but the weights are informed judgment, not fitted to measured conversions. That makes this a <i>structured expert model</i> — reliable for ranking designs and explaining why one wins, not for absolute percentages. A live A/B test is what turns these priors into measurements.</p>
     </div>
   </details>
 
@@ -712,6 +733,14 @@ async function sendChat(id){
 function scrollChat(id){ setTimeout(()=>{ const el=document.getElementById('chatlog-'+id); if(el) el.scrollTop=el.scrollHeight; },60); }
 let showBaseline=true;
 function toggleBase(v){ showBaseline=v; renderBars(); }
+function startOver(){
+  if(designs.length && !confirm('Clear all uploaded designs and start over?')) return;
+  designs=[]; showBaseline=true;
+  const sb=document.getElementById('showBase'); if(sb) sb.checked=true;
+  closePreview();
+  renderCards(); renderBars();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function renderBars(){
   const bars=$('#bars'); const axis=$('#axis');
   if(!designs.length){ bars.innerHTML='<div class="empty">Upload a design to see it ranked here.</div>'; axis.style.display='none'; return; }
