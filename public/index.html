@@ -135,6 +135,16 @@
   details.how b{color:var(--ink)}
   .foot{color:var(--ink3);font-size:11px;line-height:1.6;margin-top:22px}
 
+  /* about / overview */
+  details.about{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 18px}
+  details.about summary{cursor:pointer;padding:15px 0;font-weight:700;font-size:13.5px;list-style:none;color:var(--ink)}
+  details.about summary::-webkit-details-marker{display:none}
+  details.about summary::before{content:'– ';color:var(--blue);font-weight:800}
+  details.about:not([open]) summary::before{content:'+ '}
+  details.about .inner{padding:0 0 16px;color:var(--ink2);font-size:13px;line-height:1.62}
+  details.about .inner p{margin:0 0 10px}
+  details.about .inner p:last-child{margin-bottom:0}
+  details.about b{color:var(--ink)}
   /* improvement suggestions */
   .suggest-wrap{border-top:1px solid var(--line2);padding:14px 18px 16px;background:#fbfdff}
   .sg-bartop{display:flex;align-items:center;gap:12px}
@@ -200,6 +210,15 @@
     <div class="sub">Drop in one or more HTML mockups. Each is rendered, auto-scored on the five UX levers, and dropped live into the calibrated 64-segment model — ranked against the baseline design set.</div>
     <span class="model-flag"><span class="dot"></span> Modeled estimate — a ranking with reasons, not measured data. Confirm with a live A/B test.</span>
   </header>
+
+  <details class="about" open>
+    <summary>About this tool — what it is and does</summary>
+    <div class="inner">
+      <p>A decision tool for the "coverage gap" screen shown during benefits enrollment. Drop in one or more HTML mockups and it estimates how likely each one is to get an employee to click the primary call-to-action (e.g. "See my rate") — then ranks your candidates against a baseline set of designs and points to what would move the number.</p>
+      <p><b>How it works.</b> Each design is rendered and scored on five UX levers — Clarity, Guidance, Authority, Payoff, and Friction — plus a Reach factor for how many people actually scroll far enough to see the gap. Rules pre-score every lever, Claude gives an independent second opinion, and you set the final call. Those scores feed a model calibrated across 64 audience segments (family × age × income) to produce a conversion estimate and rank the designs. From there you can see which lever has the most headroom, get concrete fixes for that specific screen, and ask follow-up questions in a chat tied to each design.</p>
+      <p><b>What it is — and isn't.</b> These are modeled estimates, not measured results. The tool exists to rank designs and explain <i>why</i> one wins, so you can prioritize what to A/B test — it doesn't replace the test itself.</p>
+    </div>
+  </details>
 
   <label class="drop" id="drop">
     <input type="file" id="file" accept=".html,.htm" multiple>
