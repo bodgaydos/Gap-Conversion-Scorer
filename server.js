@@ -137,5 +137,54 @@ app.post('/api/suggest', rateLimit, async (req, res) => {
   }
 });
 
+app.post('/api/chat', rateLimit, async (req, res) => {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return res.status(500).json({ error: 'Server is missing ANTHROPIC_API_KEY.' });
+
+  const ctx = req.body && req.body.context || {};
+  let msgs = Array.isArray(req.body && req.body.messages) ? req.body.messages : [];
+  msgs = msgs
+    .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-16)
+    .map(m => ({ role: m.role, content: m.content.slice(0, 4000) }));
+  if (!msgs.length || msgs[msgs.length - 1].role !== 'user')
+    return res.status(400).json({ error: 'No question to answer.' });
+
+  const sys =
+    `You are helping a product designer improve one specific life-insurance "coverage gap" insertion ` +
+    `shown during benefits enrollment, to increase clicks on the primary CTA.\n\n` +
+    `THE DESIGN UNDER DISCUSSION:\n` +
+    `- Lever scores (0-1): ${JSON.stringify(ctx.scores || {}).slice(0, 600)}\n` +
+    `- Model headroom (conversion points each lever adds if improved, biggest first): ${JSON.stringify(ctx.impact || []).slice(0, 1000)}\n` +
+    `- Improvement suggestions already generated: ${JSON.stringify(ctx.suggestions || {}).slice(0, 3000)}\n` +
+    `- Visible text of the design:\n"""${String(ctx.text || '').slice(0, 4000)}"""\n\n` +
+    `Levers: C clarity, G guidance, A authority, Y payoff, F friction (higher = worse), reach (who sees the gap card).\n\n` +
+    `Answer the designer's questions about improving THIS design. Be specific and concrete — reference the actual ` +
+    `copy, elements, scores, and suggestions above. When asked for copy, give ready-to-use options. Keep answers ` +
+    `tight and practical. If asked something unrelated to this design or to conversion/UX, briefly steer back.`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: process.env.SCORER_MODEL || 'claude-sonnet-5',
+        max_tokens: 800,
+        system: sys,
+        messages: msgs,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = data && data.error && data.error.message ? data.error.message : ('Anthropic API HTTP ' + r.status);
+      return res.status(502).json({ error: msg });
+    }
+    const reply = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    return res.json({ reply: reply || '(no reply)' });
+  } catch (e) {
+    return res.status(502).json({ error: 'Chat failed: ' + (e && e.message ? e.message : String(e)) });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log('Pendella Gap Scorer listening on ' + port));

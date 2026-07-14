@@ -144,6 +144,20 @@
   .sg-bar span{display:block;height:100%;background:var(--blue);border-radius:3px}
   .sg-list{margin:0;padding-left:18px;color:var(--ink2);font-size:12.5px;line-height:1.55}
   .sg-list li{margin-bottom:3px}
+  /* chat about a design */
+  .chat{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
+  .chat-h{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+  .chat-log{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+  .msg{max-width:88%;padding:8px 11px;border-radius:11px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+  .msg.user{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:3px}
+  .msg.assistant{align-self:flex-start;background:#eef3f8;color:var(--ink);border-bottom-left-radius:3px}
+  .msg.loading{color:var(--ink3);display:flex;align-items:center;gap:8px}
+  .chat-err{color:var(--warn);font-size:12px;background:#fdf6ec;border:1px solid #f2e2c6;border-radius:8px;padding:8px 10px;margin-bottom:10px}
+  .chat-in{display:flex;gap:8px}
+  .chat-in input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:12.5px;outline:none}
+  .chat-in input:focus{border-color:var(--blue)}
+  .chat-in button{border:none;background:var(--ink);color:#fff;font-family:inherit;font-weight:600;font-size:12.5px;padding:0 15px;border-radius:9px;cursor:pointer}
+  .chat-in button:disabled{opacity:.55;cursor:default}
   /* levers explainer */
   .explain{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
   .explain h3{margin:0 0 3px;font-size:16px;font-weight:600}
@@ -222,6 +236,7 @@
 <script>
 const SCORE_ENDPOINT = "/api/score";       // same-origin backend proxy (see server.js)
 const SUGGEST_ENDPOINT = "/api/suggest";   // per-lever improvement suggestions
+const CHAT_ENDPOINT = "/api/chat";         // grounded follow-up chat about a design
 /* ============================ MODEL ENGINE (port of persona_grid.py) ============================ */
 const BASE_VARIANTS = {
   v2:{name:"v2 · Original",levers:{C:0.09,G:0.07,A:0.13,Y:0.09,F:0.30}},
@@ -462,6 +477,19 @@ function renderCards(){
               ${sug?'<ul class="sg-list">'+sug.map(x=>'<li>'+escapeHtml(x)+'</li>').join('')+'</ul>':''}
             </div>`;
           }).join('');
+        if(d.suggestState==='done'){
+          const log=(d.chat||[]).map(m=>`<div class="msg ${m.role}">${escapeHtml(m.content)}</div>`).join('')
+            +(d.chatState==='loading'?`<div class="msg assistant loading"><span class="spin"></span> thinking…</div>`:'');
+          panel+=`<div class="chat">
+            <div class="chat-h">Ask Claude about this design</div>
+            ${d.chatErr?`<div class="chat-err">${escapeHtml(d.chatErr)}</div>`:''}
+            ${log?`<div class="chat-log" id="chatlog-${d.id}">${log}</div>`:''}
+            <div class="chat-in">
+              <input type="text" id="chatin-${d.id}" placeholder="e.g. write 3 headline options for the gap" value="${escapeHtml(d.chatDraft||'')}" oninput="chatDraft(${d.id},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendChat(${d.id});}">
+              <button onclick="sendChat(${d.id})" ${d.chatState==='loading'?'disabled':''}>Send</button>
+            </div>
+          </div>`;
+        }
       }
       suggestHtml=`<div class="suggest-wrap">
         <div class="sg-bartop"><span class="sg-title">Improve this design</span>
@@ -539,6 +567,7 @@ async function suggest(id){
     document.body.removeChild(ifr);
   }catch(e){ text=d.html.replace(/<[^>]+>/g,' '); }
   text=text.replace(/\s+/g,' ').trim().slice(0,7000);
+  d.renderedText=text;
   const imp=leverImpact(d);
   const payload={ text,
     scores:{...d.final.levers, reach:+d.final.reach.toFixed(2)},
@@ -554,8 +583,33 @@ async function suggest(id){
   }
   renderCards();
 }
-
-/* ============================ RESULTS BARS ============================ */
+function chatDraft(id,val){ const d=designs.find(x=>x.id===id); if(d) d.chatDraft=val; }
+async function sendChat(id){
+  const d=designs.find(x=>x.id===id); if(!d)return;
+  const q=(d.chatDraft||'').trim(); if(!q||d.chatState==='loading')return;
+  d.chat=d.chat||[]; d.chat.push({role:'user',content:q});
+  d.chatDraft=''; d.chatErr=''; d.chatState='loading'; renderCards(); scrollChat(id);
+  const imp=leverImpact(d);
+  const context={
+    scores:{...d.final.levers, reach:+d.final.reach.toFixed(2)},
+    impact:imp.tests.map(t=>({lever:t.lever,current:+(+t.cur).toFixed(2),gain_pts:+(t.gain*100).toFixed(2)})),
+    suggestions:d.suggest||{},
+    text:d.renderedText||d.html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,7000)
+  };
+  try{
+    const resp=await fetch(CHAT_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({context, messages:d.chat.slice(-16)})});
+    const data=await resp.json().catch(()=>({error:'Bad response from chat service (HTTP '+resp.status+')'}));
+    if(!resp.ok||data.error) throw new Error(data.error||('HTTP '+resp.status));
+    d.chat.push({role:'assistant',content:data.reply||'(no reply)'});
+    d.chatState='idle';
+  }catch(e){
+    d.chatState='idle';
+    d.chatErr="Chat couldn't reach Claude. On the deployed tool, check the backend + ANTHROPIC_API_KEY. ("+e.message+")";
+  }
+  renderCards(); scrollChat(id);
+}
+function scrollChat(id){ setTimeout(()=>{ const el=document.getElementById('chatlog-'+id); if(el) el.scrollTop=el.scrollHeight; },60); }
 function renderBars(){
   const bars=$('#bars'); const axis=$('#axis');
   const rows=[];
