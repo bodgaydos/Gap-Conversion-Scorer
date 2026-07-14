@@ -42,7 +42,8 @@
   /* design card */
   .dcard{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 2px rgba(11,37,64,.04)}
   .dhead{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line2)}
-  .dhead .fn{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dhead .fn{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .dhead .ftype{flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--blue);background:var(--up-soft);padding:2px 7px;border-radius:6px}
   .dhead .conv{margin-left:auto;text-align:right;flex-shrink:0}
   .dhead .conv .pct{font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1}
   .dhead .conv .rel{font-size:11.5px;font-weight:600;margin-top:2px}
@@ -399,7 +400,7 @@ function addFiles(files){
   [...files].forEach(f=>{
     if(!/\.html?$/i.test(f.name))return;
     const rd=new FileReader();
-    rd.onload=()=>{ const id=++uid; const d={id,name:f.name,html:rd.result,rules:null,claude:null,final:null,claudeState:'idle',claudeMsg:''};
+    rd.onload=()=>{ const id=++uid; const d={id,name:f.name,ftype:(f.type||''),fsize:f.size,html:rd.result,rules:null,claude:null,final:null,claudeState:'idle',claudeMsg:''};
       designs.push(d); renderCards(); scoreDesign(d); };
     rd.readAsText(f);
   });
@@ -501,6 +502,7 @@ function renderCards(){
     el.innerHTML=`
       <div class="dhead">
         <span class="fn">${escapeHtml(d.name)}</span>
+        <span class="ftype" title="File type and size">${fileType(d)}</span>
         <span class="conv"><span class="pct" id="cv-${d.id}">${pct(r)}</span><span class="rel ${rel>=0?'pos':'neg'}" id="cr-${d.id}">${rel>=0?'+':''}${(rel*100).toFixed(0)}% vs v6</span></span>
         <button class="x" title="Remove" onclick="removeDesign(${d.id})">×</button>
       </div>
@@ -516,6 +518,13 @@ function renderCards(){
   });
 }
 function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fileType(d){
+  let t=(d.ftype||'').split('/').pop().toUpperCase();
+  if(!t||t==='PLAIN'||t==='OCTET-STREAM') t=(d.name.split('.').pop()||'FILE').toUpperCase();
+  let sz='';
+  if(d.fsize){ sz = d.fsize<1024 ? d.fsize+' B' : (d.fsize/1024).toFixed(d.fsize<102400?1:0)+' KB'; }
+  return escapeHtml(t)+(sz?' · '+sz:'');
+}
 
 function setLever(id,k,val,elm){
   const d=designs.find(x=>x.id===id); if(!d)return;
