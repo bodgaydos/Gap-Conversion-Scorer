@@ -26,6 +26,36 @@ function rateLimit(req, res, next) {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, model: process.env.SCORER_MODEL || 'claude-sonnet-5' }));
 
+// Pull a JSON object out of a model reply, tolerating prose, ```fences```, and truncation.
+function balanceJson(s) {
+  let out = '', inStr = false, esc = false; const stack = [];
+  for (const ch of s) {
+    if (esc) { out += ch; esc = false; continue; }
+    if (ch === '\\') { out += ch; esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; out += ch; continue; }
+    if (!inStr) {
+      if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
+      else if (ch === '}' || ch === ']') { if (stack[stack.length - 1] === ch) stack.pop(); }
+    }
+    out += ch;
+  }
+  if (inStr) out += '"';
+  out = out.replace(/,\s*$/, '');
+  while (stack.length) out += stack.pop();
+  return out;
+}
+function extractJson(raw) {
+  if (!raw || !raw.trim()) throw new Error('model returned no text');
+  let s = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const i = s.indexOf('{');
+  if (i < 0) throw new Error('no JSON object in model reply');
+  s = s.slice(i);
+  const j = s.lastIndexOf('}');
+  const candidate = j >= 0 ? s.slice(0, j + 1) : s;
+  try { return JSON.parse(candidate); } catch (_e) {}
+  return JSON.parse(balanceJson(s)); // salvage truncated output
+}
+
 const RUBRIC = `You are scoring a life-insurance "coverage gap" insertion shown during benefits enrollment. Score how likely it is to make an employee click the primary CTA (e.g. "See my rate").
 
 Rate each lever from 0.00 to 1.00:
@@ -74,9 +104,7 @@ app.post('/api/score', rateLimit, async (req, res) => {
       return res.status(502).json({ error: msg });
     }
     const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const slice = clean.slice(clean.indexOf('{'), clean.lastIndexOf('}') + 1);
-    const js = JSON.parse(slice);
+    const js = extractJson(raw);
     return res.json(js);
   } catch (e) {
     return res.status(502).json({ error: 'Scoring failed: ' + (e && e.message ? e.message : String(e)) });
@@ -119,7 +147,7 @@ app.post('/api/suggest', rateLimit, async (req, res) => {
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: process.env.SCORER_MODEL || 'claude-sonnet-5',
-        max_tokens: 1400,
+        max_tokens: 2200,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -129,8 +157,7 @@ app.post('/api/suggest', rateLimit, async (req, res) => {
       return res.status(502).json({ error: msg });
     }
     const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const js = JSON.parse(clean.slice(clean.indexOf('{'), clean.lastIndexOf('}') + 1));
+    const js = extractJson(raw);
     return res.json(js);
   } catch (e) {
     return res.status(502).json({ error: 'Suggestion failed: ' + (e && e.message ? e.message : String(e)) });
