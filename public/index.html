@@ -140,12 +140,15 @@
   .foot{color:var(--ink3);font-size:11px;line-height:1.6;margin-top:22px}
 
   /* about / overview */
-  details.about{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 18px}
-  details.about summary{cursor:pointer;padding:15px 0;font-weight:700;font-size:13.5px;list-style:none;color:var(--ink)}
+  details.about{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 18px;overflow:hidden}
+  details.about summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;color:var(--ink);font-weight:700;font-size:13.5px;margin:0 -18px;padding:14px 18px}
   details.about summary::-webkit-details-marker{display:none}
-  details.about summary::before{content:'– ';color:var(--blue);font-weight:800}
-  details.about:not([open]) summary::before{content:'+ '}
-  details.about .inner{padding:0 0 16px;color:var(--ink2);font-size:13px;line-height:1.62}
+  details.about summary:hover{background:#f4f9fe;color:var(--blue)}
+  details.about .abtag{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--blue);padding:3px 8px;border-radius:5px}
+  details.about .chev{margin-left:auto;width:18px;height:18px;color:var(--ink3);transition:transform .2s;flex-shrink:0}
+  details.about[open] .chev{transform:rotate(180deg);color:var(--blue)}
+  details.about[open] summary{border-bottom:1px solid var(--line2)}
+  details.about .inner{padding:14px 0 16px;color:var(--ink2);font-size:13px;line-height:1.62}
   details.about .inner p{margin:0 0 10px}
   details.about .inner p:last-child{margin-bottom:0}
   details.about b{color:var(--ink)}
@@ -216,7 +219,7 @@
   </header>
 
   <details class="about" open>
-    <summary>About this tool — what it is and does</summary>
+    <summary><span class="abtag">Overview</span> About this tool — what it is and does <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="inner">
       <p>A decision tool for the "coverage gap" screen shown during benefits enrollment. Drop in one or more HTML mockups and it estimates how likely each one is to get an employee to click the primary call-to-action (e.g. "See my rate") — then ranks your candidates against a baseline set of designs and points to what would move the number.</p>
       <p><b>How it works.</b> Each design is rendered and scored on five UX levers — Clarity, Guidance, Authority, Payoff, and Friction — plus a Reach factor for how many people actually scroll far enough to see the gap. Rules pre-score every lever, Claude gives an independent second opinion, and you set the final call. Those scores feed a model calibrated across 64 audience segments (family × age × income) to produce a conversion estimate and rank the designs. From there you can see which lever has the most headroom, get concrete fixes for that specific screen, and ask follow-up questions in a chat tied to each design.</p>
