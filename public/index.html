@@ -115,18 +115,6 @@
 
   .empty{color:var(--ink3);font-size:13px;text-align:center;padding:28px 0}
 
-  /* lever definitions */
-  .lkey{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:8px}
-  .ldef{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
-  .ldef:first-child{padding-top:0}
-  .ldef:last-of-type{border-bottom:none}
-  .ldef .lname{font-weight:600;font-size:12.5px;color:var(--ink)}
-  .ldef .lname .lk{color:var(--ink3);font-weight:500;font-size:11px;margin-left:4px}
-  .ldef .ltext{color:var(--ink2);font-size:12.5px;line-height:1.55}
-  .ldef .ltext b{color:var(--ink)}
-  .lcal{color:var(--ink3);font-size:11.5px;line-height:1.6;margin:12px 0 0;padding-top:12px;border-top:1px dashed var(--line)}
-  .lcal b{color:var(--ink2)}
-
   /* how it works */
   details.how{margin-top:26px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 16px}
   details.how summary{cursor:pointer;padding:14px 0;font-weight:600;font-size:13px;list-style:none}
@@ -137,6 +125,37 @@
   details.how b{color:var(--ink)}
   .foot{color:var(--ink3);font-size:11px;line-height:1.6;margin-top:22px}
 
+  /* improvement suggestions */
+  .suggest-wrap{border-top:1px solid var(--line2);padding:14px 18px 16px;background:#fbfdff}
+  .sg-bartop{display:flex;align-items:center;gap:12px}
+  .sg-title{font-size:12px;font-weight:700;letter-spacing:.3px}
+  .sg-btn{margin-left:auto;border:1px solid var(--blue);background:var(--blue);color:#fff;font-family:inherit;font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .sg-btn:hover{background:#1f68b0}.sg-btn:disabled{opacity:.55;cursor:default}
+  .sg-panel{margin-top:12px}
+  .sg-top{font-size:12.5px;color:var(--ink);background:var(--up-soft);border:1px solid #d3e6fa;border-radius:9px;padding:9px 12px;margin-bottom:10px}
+  .sg-lever{padding:10px 0;border-top:1px dashed var(--line)}
+  .sg-lever:first-of-type{border-top:none}
+  .sg-lever.top .sg-name{color:var(--blue)}
+  .sg-head{display:flex;align-items:baseline;gap:10px;font-size:12.5px}
+  .sg-name{font-weight:600}.sg-name b{color:var(--ink3);font-weight:600;font-size:11px}
+  .sg-cur{color:var(--ink3);font-size:11.5px;margin-left:auto}
+  .sg-gain{font-variant-numeric:tabular-nums;font-weight:700;font-size:11.5px;color:var(--good)}
+  .sg-bar{height:4px;background:#eaf0f5;border-radius:3px;margin:6px 0 8px;overflow:hidden}
+  .sg-bar span{display:block;height:100%;background:var(--blue);border-radius:3px}
+  .sg-list{margin:0;padding-left:18px;color:var(--ink2);font-size:12.5px;line-height:1.55}
+  .sg-list li{margin-bottom:3px}
+  /* levers explainer */
+  .explain{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .explain h3{margin:0 0 3px;font-size:16px;font-weight:600}
+  .explain .rsub{color:var(--ink2);font-size:12.5px;margin-bottom:14px}
+  .lx{display:grid;grid-template-columns:118px 1fr;gap:6px 14px;align-items:baseline;padding:9px 0;border-top:1px solid var(--line2)}
+  .lx:first-of-type{border-top:none}
+  .lx .lxn{font-weight:700;font-size:13px}
+  .lx .lxn span{color:var(--ink3);font-weight:600;font-size:11px;margin-left:3px}
+  .lx .lxd{font-size:12.5px;color:var(--ink2);line-height:1.55}
+  .lx .lxd b{color:var(--ink)}
+  .lx-cal{margin-top:12px;font-size:12px;color:var(--ink3);background:#f7fafd;border:1px solid var(--line2);border-radius:8px;padding:9px 12px}
+  @media(max-width:620px){.lx{grid-template-columns:1fr;gap:2px}}
   #stage{position:fixed;left:-30000px;top:0;width:1120px;height:2600px;overflow:hidden;pointer-events:none;visibility:hidden}
   #stage iframe{width:1120px;height:2600px;border:0}
 
@@ -145,7 +164,6 @@
     .col.left{border-right:none;border-bottom:1px solid var(--line2)}
     .row{grid-template-columns:130px 1fr 70px}
     .axis{margin-left:142px}
-    .ldef{grid-template-columns:1fr;gap:3px}
   }
 </style>
 </head>
@@ -177,32 +195,16 @@
   </section>
 
   <div class="seclab">What the levers mean</div>
-  <section class="lkey">
-    <div class="ldef">
-      <div class="lname">Clarity <span class="lk">C</span></div>
-      <div class="ltext">How quickly someone grasps their gap and its link to the product. <b>Raised by:</b> a specific dollar gap, placed near the top, visually tied to Individual Life (a connected/color-matched bar, a "fills the gap" link).</div>
-    </div>
-    <div class="ldef">
-      <div class="lname">Guidance <span class="lk">G</span></div>
-      <div class="ltext">How clearly the design tells you what to do, in order. <b>Raised by:</b> numbered steps, an explicit plan/path, a recommended default amount.</div>
-    </div>
-    <div class="ldef">
-      <div class="lname">Authority <span class="lk">A</span></div>
-      <div class="ltext">Trust and credibility. <b>Raised by:</b> a "Recommended" mark, a rationale (e.g. 10× income), guaranteed-issue / "no health questions," licensing/carrier language.</div>
-    </div>
-    <div class="ldef">
-      <div class="lname">Payoff <span class="lk">Y</span></div>
-      <div class="ltext">The emotional benefit of closing the gap. <b>Raised by:</b> provision language ("your family would receive," "for life"), a big benefit number, a completion/celebration moment.</div>
-    </div>
-    <div class="ldef">
-      <div class="lname">Friction <span class="lk">F</span></div>
-      <div class="ltext">The cost to act (higher = worse; it subtracts). <b>Raised by:</b> form fields, competing CTAs, required consent. <b>Lowered by:</b> reassurance ("apply in minutes · no commitment").</div>
-    </div>
-    <div class="ldef">
-      <div class="lname">Reach <span class="lk">0.2–1.0</span></div>
-      <div class="ltext">The share of sessions that scroll far enough to see the gap card. A top-of-page gap ≈ 1.0; a card buried in an optional list is much lower. Blends the design's persuasion with a "never saw it" baseline.</div>
-    </div>
-    <p class="lcal">For reference, current <b>v6</b> scores about C .18 / G .12 / A .10 / Y .12 / F .04; the top design <b>V6b-3</b> is about C .82 / G .85 / A .80 / Y .45 / F .10.</p>
+  <section class="explain">
+    <h3>Five levers, scored 0–1</h3>
+    <div class="rsub">Each design becomes these scores; the model turns them into a conversion estimate. Reach is a companion factor.</div>
+    <div class="lx"><div class="lxn">Clarity <span>C</span></div><div class="lxd">How quickly someone grasps their gap and its link to the product. <b>Raised by:</b> a specific dollar gap, placed near the top, visually tied to Individual Life (a connected/color-matched bar, a "fills the gap" link).</div></div>
+    <div class="lx"><div class="lxn">Guidance <span>G</span></div><div class="lxd">How clearly the design tells you what to do, in order. <b>Raised by:</b> numbered steps, an explicit plan/path, a recommended default amount.</div></div>
+    <div class="lx"><div class="lxn">Authority <span>A</span></div><div class="lxd">Trust and credibility. <b>Raised by:</b> a "Recommended" mark, a rationale (e.g. 10× income), guaranteed-issue / "no health questions," licensing/carrier language.</div></div>
+    <div class="lx"><div class="lxn">Payoff <span>Y</span></div><div class="lxd">The emotional benefit of closing the gap. <b>Raised by:</b> provision language ("your family would receive," "for life"), a big benefit number, a completion/celebration moment.</div></div>
+    <div class="lx"><div class="lxn">Friction <span>F</span></div><div class="lxd"><b>Higher is worse — it subtracts.</b> Raised by: form fields, competing CTAs, required consent. Lowered by: reassurance ("apply in minutes · no commitment").</div></div>
+    <div class="lx"><div class="lxn">Reach <span>0.2–1</span></div><div class="lxd">The share of sessions that scroll far enough to see the gap card. A top-of-page gap ≈ 1.0; a card buried in an optional list is much lower — it blends the design's persuasion with a "never saw it" baseline.</div></div>
+    <div class="lx-cal">For reference, current <b>v6</b> ≈ C .18 / G .12 / A .10 / Y .12 / F .04; the top design <b>V6b-3</b> ≈ C .82 / G .85 / A .80 / Y .45 / F .10.</div>
   </section>
 
   <details class="how">
@@ -218,7 +220,8 @@
 </div>
 
 <script>
-const SCORE_ENDPOINT = "/api/score";   // same-origin backend proxy (see server.js)
+const SCORE_ENDPOINT = "/api/score";       // same-origin backend proxy (see server.js)
+const SUGGEST_ENDPOINT = "/api/suggest";   // per-lever improvement suggestions
 /* ============================ MODEL ENGINE (port of persona_grid.py) ============================ */
 const BASE_VARIANTS = {
   v2:{name:"v2 · Original",levers:{C:0.09,G:0.07,A:0.13,Y:0.09,F:0.30}},
@@ -439,6 +442,34 @@ function renderCards(){
     }
     const errNote=d.rules&&d.rules.err?`<div class="cl-err">${d.rules.err}</div>`:'';
 
+    // ---- improvement suggestions: model headroom (instant) + Claude's how-to ----
+    let suggestHtml='';
+    if(d.final){
+      let panel='';
+      if(d.suggestState==='error'){ panel=`<div class="cl-err">${d.suggestMsg}</div>`; }
+      else if(d.suggestState==='loading'||d.suggestState==='done'){
+        const imp=leverImpact(d), top=imp.tests[0], denom=(top.gain*100)||1;
+        panel=`<div class="sg-top">Start with <b>${top.name}</b> — the steepest payoff here. Bars show conversion points gained from a moderate (+0.2) lift on each lever; the big jumps come from improving several together.</div>`
+          +(d.suggestState==='loading'?`<div class="cl-load"><span class="spin"></span> Claude is drafting concrete fixes for this screen…</div>`:'')
+          +imp.tests.map((t,i)=>{
+            const sug=d.suggest&&d.suggest[t.lever]&&d.suggest[t.lever].length?d.suggest[t.lever]:null;
+            const g=t.gain*100, bw=Math.max(3,Math.min(100,g/denom*100));
+            return `<div class="sg-lever ${i===0?'top':''}">
+              <div class="sg-head"><span class="sg-name">${t.name}${t.lever!=='reach'?' <b>'+t.lever+'</b>':''}</span>
+                <span class="sg-cur">now ${(+t.cur).toFixed(2)}</span>
+                <span class="sg-gain">+${g.toFixed(1)} pts</span></div>
+              <div class="sg-bar"><span style="width:${bw}%"></span></div>
+              ${sug?'<ul class="sg-list">'+sug.map(x=>'<li>'+escapeHtml(x)+'</li>').join('')+'</ul>':''}
+            </div>`;
+          }).join('');
+      }
+      suggestHtml=`<div class="suggest-wrap">
+        <div class="sg-bartop"><span class="sg-title">Improve this design</span>
+          <button class="sg-btn" ${d.suggestState==='loading'?'disabled':''} onclick="suggest(${d.id})">${d.suggest?'Refresh suggestions':'Suggest improvements'}</button></div>
+        ${panel?`<div class="sg-panel">${panel}</div>`:'<p class="hint" style="margin:8px 2px 0">The model ranks which lever has the most conversion headroom; Claude returns specific fixes for this screen.</p>'}
+      </div>`;
+    }
+
     el.innerHTML=`
       <div class="dhead">
         <span class="fn">${escapeHtml(d.name)}</span>
@@ -451,7 +482,8 @@ function renderCards(){
           <button class="cl-btn" ${d.claudeState==='loading'?'disabled':''} onclick="askClaude(${d.id})"><span class="spark"></span> ${d.claude?'Re-ask Claude':'Ask Claude to score'}</button>
           ${claudeHtml}
         </div>
-      </div>`;
+      </div>
+      ${suggestHtml}`;
     host.appendChild(el);
   });
 }
@@ -479,6 +511,48 @@ function applyClaude(id){
   const d=designs.find(x=>x.id===id); if(!d||!d.claude)return;
   d.final={levers:{...d.claude.levers},reach:d.claude.reach};
   renderCards(); renderBars();
+}
+
+/* ============================ IMPROVEMENT SUGGESTIONS ============================ */
+// Model headroom: how many conversion POINTS each lever would add if improved by ~0.2
+// (Friction lowered, reach raised). Ranks which lever to work on first.
+function leverImpact(d){
+  const L=d.final.levers, R=d.final.reach, base=overall(L,R), D=0.2;
+  const tests=[];
+  [['C','Clarity'],['G','Guidance'],['A','Authority'],['Y','Payoff']].forEach(([k,n])=>{
+    tests.push({lever:k,name:n,cur:L[k],gain:overall({...L,[k]:Math.min(1,L[k]+D)},R)-base});
+  });
+  tests.push({lever:'F',name:'Friction',cur:L.F,gain:overall({...L,F:Math.max(0,L.F-D)},R)-base});
+  if(R<0.999) tests.push({lever:'reach',name:'Reach',cur:R,gain:overall(L,Math.min(1,R+D))-base});
+  tests.sort((a,b)=>b.gain-a.gain);
+  return {base,tests};
+}
+async function suggest(id){
+  const d=designs.find(x=>x.id===id); if(!d||!d.final)return;
+  d.suggestState='loading'; renderCards();
+  let text='';
+  try{
+    const ifr=document.createElement('iframe'); ifr.setAttribute('sandbox','allow-same-origin');
+    ifr.style.cssText='position:fixed;left:-30000px;width:1120px;height:2200px'; document.body.appendChild(ifr);
+    await new Promise(res=>{ifr.onload=()=>setTimeout(res,150);ifr.srcdoc=d.html;setTimeout(res,1500);});
+    try{text=ifr.contentDocument.body.innerText;}catch(e){text=d.html.replace(/<[^>]+>/g,' ');}
+    document.body.removeChild(ifr);
+  }catch(e){ text=d.html.replace(/<[^>]+>/g,' '); }
+  text=text.replace(/\s+/g,' ').trim().slice(0,7000);
+  const imp=leverImpact(d);
+  const payload={ text,
+    scores:{...d.final.levers, reach:+d.final.reach.toFixed(2)},
+    impact:imp.tests.map(t=>({lever:t.lever,current:+(+t.cur).toFixed(2),gain_pts:+(t.gain*100).toFixed(2)})) };
+  try{
+    const resp=await fetch(SUGGEST_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await resp.json().catch(()=>({error:'Bad response from suggestions service (HTTP '+resp.status+')'}));
+    if(!resp.ok||data.error) throw new Error(data.error||('HTTP '+resp.status));
+    d.suggest=data; d.suggestState='done';
+  }catch(e){
+    d.suggestState='error';
+    d.suggestMsg="Couldn't reach the suggestions service. On the deployed tool this means the backend is down or ANTHROPIC_API_KEY isn't set. If you opened the raw HTML file with no server, deploy it (see README) or ask in chat. ("+e.message+")";
+  }
+  renderCards();
 }
 
 /* ============================ RESULTS BARS ============================ */

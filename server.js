@@ -83,5 +83,59 @@ app.post('/api/score', rateLimit, async (req, res) => {
   }
 });
 
+const RAISES = `What raises each lever:
+- C Clarity: state a specific dollar gap, place it near the top, and visually tie it to buying Individual Life (a connected/color-matched bar, a "fills the gap" link, naming the product next to the gap).
+- G Guidance: numbered steps, an explicit plan/path, a recommended default amount pre-selected.
+- A Authority: a "Recommended" mark, a rationale (e.g. 10x income), guaranteed-issue / "no health questions", licensing/carrier language, trust chips.
+- Y Payoff: provision language ("your family would receive", "for life", "stays with you"), a big benefit number, a completion/celebration moment.
+- F Friction (LOWER is better): remove or defer form fields, reduce competing CTAs, drop required consent before the rate, add reassurance ("apply in minutes, no commitment").
+- reach: move the gap card higher / above the fold, out of an optional section, above competing benefit cards.`;
+
+app.post('/api/suggest', rateLimit, async (req, res) => {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return res.status(500).json({ error: 'Server is missing ANTHROPIC_API_KEY.' });
+
+  const text = String(req.body && req.body.text || '').slice(0, 8000);
+  if (!text.trim()) return res.status(400).json({ error: 'No design text provided.' });
+  const scores = JSON.stringify(req.body && req.body.scores || {}).slice(0, 800);
+  const impact = JSON.stringify(req.body && req.body.impact || []).slice(0, 1200);
+
+  const prompt =
+    `You are improving a life-insurance "coverage gap" insertion shown during benefits enrollment. ` +
+    `The goal is more clicks on the primary CTA.\n\n` + RAISES +
+    `\n\nThis design's current lever scores (0-1): ${scores}` +
+    `\nThe model's headroom ranking — how many conversion POINTS each lever would add if improved, biggest first: ${impact}` +
+    `\n\nVisible text of the design:\n"""${text}"""` +
+    `\n\nFor each lever, give 2-3 SPECIFIC, concrete changes to THIS design that would raise it (for Friction, lower it). ` +
+    `Ground every suggestion in what the design actually shows or is missing — reference real copy or elements, not generic advice. ` +
+    `Lead with the highest-headroom levers.\n` +
+    `Respond with ONLY a JSON object, no prose, no fences:\n` +
+    `{"C":["..."],"G":["..."],"A":["..."],"Y":["..."],"F":["..."],"reach":["..."]}\n` +
+    `Keep each suggestion under 22 words. Omit a lever's array only if it is already near 1.0 with no meaningful change to make.`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: process.env.SCORER_MODEL || 'claude-sonnet-5',
+        max_tokens: 1400,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = data && data.error && data.error.message ? data.error.message : ('Anthropic API HTTP ' + r.status);
+      return res.status(502).json({ error: msg });
+    }
+    const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const js = JSON.parse(clean.slice(clean.indexOf('{'), clean.lastIndexOf('}') + 1));
+    return res.json(js);
+  } catch (e) {
+    return res.status(502).json({ error: 'Suggestion failed: ' + (e && e.message ? e.message : String(e)) });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log('Pendella Gap Scorer listening on ' + port));
