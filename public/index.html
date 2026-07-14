@@ -103,6 +103,15 @@
   .results{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:8px}
   .results h3{margin:0 0 3px;font-size:16px;font-weight:600}
   .results .rsub{color:var(--ink2);font-size:12.5px;margin-bottom:16px}
+  .results-head{display:flex;align-items:center;gap:14px;margin-bottom:3px}
+  .results-head h3{margin:0}
+  .tgl{margin-left:auto;display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+  .tgl input{position:absolute;opacity:0;width:0;height:0}
+  .tgl-track{position:relative;width:34px;height:20px;background:#cdd8e2;border-radius:999px;transition:.15s;flex-shrink:0}
+  .tgl-track::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .tgl input:checked+.tgl-track{background:var(--blue)}
+  .tgl input:checked+.tgl-track::after{transform:translateX(14px)}
+  .tgl-lab{font-size:12px;font-weight:600;color:var(--ink2)}
   .row{display:grid;grid-template-columns:190px 1fr 96px;align-items:center;gap:12px;margin-bottom:8px}
   .row .nm{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .nm .tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--up);background:var(--up-soft);padding:1px 5px;border-radius:5px;margin-left:6px;vertical-align:middle}
@@ -203,7 +212,10 @@
 
   <div class="seclab">Conversion vs the baseline set</div>
   <section class="results">
-    <h3>Modeled P(click primary CTA)</h3>
+    <div class="results-head">
+      <h3>Modeled P(click primary CTA)</h3>
+      <label class="tgl"><input type="checkbox" id="showBase" checked onchange="toggleBase(this.checked)"><span class="tgl-track"></span><span class="tgl-lab">Show baseline designs</span></label>
+    </div>
     <div class="rsub">Population-weighted across 64 segments. Lift is measured vs current <b>v6</b>. Your uploads are marked <span style="color:var(--up);font-weight:700">NEW</span>.</div>
     <div id="bars"><div class="empty">Upload a design to see it ranked here.</div></div>
     <div class="axis" id="axis" style="display:none"></div>
@@ -619,12 +631,15 @@ async function sendChat(id){
   renderCards(); scrollChat(id);
 }
 function scrollChat(id){ setTimeout(()=>{ const el=document.getElementById('chatlog-'+id); if(el) el.scrollTop=el.scrollHeight; },60); }
+let showBaseline=true;
+function toggleBase(v){ showBaseline=v; renderBars(); }
 function renderBars(){
   const bars=$('#bars'); const axis=$('#axis');
-  const rows=[];
-  BASE_ORDER.forEach(v=>rows.push({key:v,name:BASE_VARIANTS[v].name,rate:overall(BASE_VARIANTS[v].levers,BASE_REACH[v]??1),base:v==='v6',up:false}));
-  designs.forEach(d=>{ if(d.final) rows.push({key:'u'+d.id,name:d.name,rate:convOf(d),base:false,up:true}); });
   if(!designs.length){ bars.innerHTML='<div class="empty">Upload a design to see it ranked here.</div>'; axis.style.display='none'; return; }
+  const rows=[];
+  if(showBaseline) BASE_ORDER.forEach(v=>rows.push({key:v,name:BASE_VARIANTS[v].name,rate:overall(BASE_VARIANTS[v].levers,BASE_REACH[v]??1),base:v==='v6',up:false}));
+  designs.forEach(d=>{ if(d.final) rows.push({key:'u'+d.id,name:d.name,rate:convOf(d),base:false,up:true}); });
+  if(!rows.length){ bars.innerHTML='<div class="empty">Baselines hidden — turn them back on to compare, or wait for scoring to finish.</div>'; axis.style.display='none'; return; }
   const maxR=Math.max(...rows.map(r=>r.rate),0.3);
   const SMAX=Math.max(0.30,maxR*1.08);
   const winKey=rows.slice().sort((a,b)=>b.rate-a.rate)[0].key;
