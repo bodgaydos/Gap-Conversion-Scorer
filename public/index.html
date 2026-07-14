@@ -47,6 +47,21 @@
   .dcard{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 2px rgba(11,37,64,.04)}
   .dhead{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line2)}
   .dhead .fn{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .dhead .prev{flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-weight:600;font-size:11.5px;padding:5px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .dhead .prev:hover{border-color:var(--blue);color:var(--blue)}
+  /* preview modal */
+  .modal{position:fixed;inset:0;background:rgba(11,37,64,.55);display:none;align-items:center;justify-content:center;z-index:1000;padding:22px}
+  .modal.show{display:flex}
+  .modal-box{background:#fff;border-radius:14px;width:min(1040px,96vw);height:min(88vh,940px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+  .modal-head{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .modal-eyebrow{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);background:var(--up-soft);padding:3px 8px;border-radius:5px;flex-shrink:0}
+  .modal-title{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .modal-tab{margin-left:auto;font-size:12px;font-weight:600;color:var(--blue);text-decoration:none;flex-shrink:0}
+  .modal-tab:hover{text-decoration:underline}
+  .modal-x{border:none;background:#f2f5f8;color:var(--ink2);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0}
+  .modal-x:hover{background:#e6ebf0}
+  .modal-body{flex:1;min-height:0;background:#fbfcfe}
+  .modal-body iframe{width:100%;height:100%;border:0;display:block}
   .dhead .ftype{flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--blue);background:var(--up-soft);padding:2px 7px;border-radius:6px}
   .dhead .conv{margin-left:auto;text-align:right;flex-shrink:0}
   .dhead .conv .pct{font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1}
@@ -272,6 +287,18 @@
 
   <p class="foot">Internal analysis tool. Lever scores are expert-style judgments, not measurements; the reach and rules heuristics are approximate by design and meant to be adjusted. Baseline design vectors are carried from the persona-grid model of record.</p>
 
+</div>
+
+<div class="modal" id="modal" onclick="closePreview(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-eyebrow">Preview</span>
+      <span class="modal-title" id="modalTitle"></span>
+      <a class="modal-tab" id="modalTab" target="_blank" rel="noopener">Open in new tab ↗</a>
+      <button class="modal-x" onclick="closePreview()" title="Close (Esc)">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -544,6 +571,7 @@ function renderCards(){
         <span class="fn">${escapeHtml(d.name)}</span>
         <span class="ftype" title="File type and size">${fileType(d)}</span>
         <span class="conv"><span class="pct" id="cv-${d.id}">${pct(r)}</span><span class="rel ${rel>=0?'pos':'neg'}" id="cr-${d.id}">${rel>=0?'+':''}${(rel*100).toFixed(0)}% vs v6</span></span>
+        <button class="prev" title="Preview the rendered design" onclick="openPreview(${d.id})"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> Preview</button>
         <button class="x" title="Remove" onclick="removeDesign(${d.id})">×</button>
       </div>
       <div class="dbody">
@@ -584,6 +612,29 @@ function updateConv(d){
   const cr=$('#cr-'+d.id); cr.textContent=(rel>=0?'+':'')+(rel*100).toFixed(0)+'% vs v6'; cr.className='rel '+(rel>=0?'pos':'neg');
 }
 function removeDesign(id){ designs=designs.filter(x=>x.id!==id); renderCards(); renderBars(); }
+let previewBlobUrl=null;
+function openPreview(id){
+  const d=designs.find(x=>x.id===id); if(!d)return;
+  document.getElementById('modalTitle').textContent=d.name;
+  const body=document.getElementById('modalBody'); body.innerHTML='';
+  const ifr=document.createElement('iframe');
+  ifr.setAttribute('sandbox','allow-same-origin allow-scripts');
+  body.appendChild(ifr);
+  try{ ifr.srcdoc=d.html; }catch(e){ ifr.setAttribute('srcdoc',d.html); }
+  const tab=document.getElementById('modalTab');
+  if(previewBlobUrl){ URL.revokeObjectURL(previewBlobUrl); previewBlobUrl=null; }
+  try{ previewBlobUrl=URL.createObjectURL(new Blob([d.html],{type:'text/html'})); tab.href=previewBlobUrl; tab.style.display=''; }
+  catch(e){ tab.style.display='none'; }
+  document.getElementById('modal').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closePreview(){
+  const m=document.getElementById('modal'); if(!m.classList.contains('show'))return;
+  m.classList.remove('show');
+  document.getElementById('modalBody').innerHTML='';
+  document.body.style.overflow='';
+  if(previewBlobUrl){ URL.revokeObjectURL(previewBlobUrl); previewBlobUrl=null; }
+}
 function applyClaude(id){
   const d=designs.find(x=>x.id===id); if(!d||!d.claude)return;
   d.final={levers:{...d.claude.levers},reach:d.claude.reach};
@@ -729,6 +780,7 @@ file.addEventListener('change',e=>{addFiles(e.target.files);file.value='';});
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
 drop.addEventListener('drop',e=>{ if(e.dataTransfer&&e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePreview(); });
 renderBars();
 </script>
 </body>
